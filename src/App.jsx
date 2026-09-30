@@ -16,10 +16,6 @@ function App() {
     setError("");
     setSales(null);
 
-    // -----------------------------
-    // Validation
-    // -----------------------------
-
     if (temperature === "") {
       setError("Please enter a temperature.");
       return;
@@ -32,36 +28,39 @@ function App() {
       return;
     }
 
-    // -----------------------------
-    // API Request
-    // -----------------------------
+    if (temperatureValue < 0) {
+      setSales(0);
+      return;
+    }
 
     try {
       setLoading(true);
 
       const response = await fetch(API_URL, {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           temperature: temperatureValue,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Prediction request failed");
-      }
-
       const result = await response.json();
 
-      setSales(result.sales);
+      if (!response.ok) {
+        throw new Error(
+          result.detail || "Prediction request failed."
+        );
+      }
 
+      setSales(result.sales);
     } catch (error) {
+      console.error("Prediction Error:", error);
+
       setError(
-        "Unable to connect to the prediction server."
+        error.message ||
+          "Unable to connect to the prediction server."
       );
     } finally {
       setLoading(false);
@@ -84,8 +83,6 @@ function App() {
 
         <section className="card">
 
-          {/* Header */}
-
           <div className="header">
 
             <div className="icon">
@@ -104,16 +101,10 @@ function App() {
 
           </div>
 
-
-          {/* Description */}
-
           <p className="description">
             Enter the temperature and our machine learning
             model will predict the expected ice cream sales.
           </p>
-
-
-          {/* Form */}
 
           <form onSubmit={handlePredict}>
 
@@ -138,17 +129,11 @@ function App() {
 
             </div>
 
-
-            {/* Error */}
-
             {error && (
               <p className="error">
                 {error}
               </p>
             )}
-
-
-            {/* Predict Button */}
 
             <button
               type="submit"
@@ -160,9 +145,6 @@ function App() {
             </button>
 
           </form>
-
-
-          {/* Result */}
 
           {sales !== null && (
 
@@ -192,9 +174,6 @@ function App() {
 
           )}
 
-
-          {/* Reset */}
-
           {(sales !== null ||
             temperature !== "") &&
             !loading && (
@@ -209,9 +188,6 @@ function App() {
 
           )}
 
-
-          {/* Footer */}
-
           <footer>
             Powered by React + FastAPI + Machine Learning
           </footer>
@@ -225,4 +201,3 @@ function App() {
 }
 
 export default App;
-

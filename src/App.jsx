@@ -3,42 +3,43 @@ import "./App.css";
 
 function App() {
   const [temperature, setTemperature] = useState("");
-  const [prediction, setPrediction] = useState(null);
-  const [error, setError] = useState("");
+  const [sales, setSales] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleTemperatureChange = (event) => {
-    const value = event.target.value;
+  const API_URL =
+    "https://ice-cream-sales-api.onrender.com/predict";
 
-    // માત્ર number અને decimal allow
-    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-      setTemperature(value);
-      setError("");
-    } else {
-      setError("Please enter numbers only.");
-    }
-  };
+  const handlePredict = async (e) => {
+    e.preventDefault();
 
-  const predictSales = async () => {
     setError("");
-    setPrediction(null);
+    setSales(null);
+
+    // -----------------------------
+    // Validation
+    // -----------------------------
 
     if (temperature === "") {
-      setError("Please enter temperature.");
+      setError("Please enter a temperature.");
       return;
     }
 
-    const temperatureNumber = Number(temperature);
+    const temperatureValue = Number(temperature);
 
-    if (Number.isNaN(temperatureNumber)) {
+    if (Number.isNaN(temperatureValue)) {
       setError("Please enter a valid number.");
       return;
     }
 
+    // -----------------------------
+    // API Request
+    // -----------------------------
+
     try {
       setLoading(true);
 
-      const response = await fetch("http://127.0.0.1:8000/predict", {
+      const response = await fetch(API_URL, {
         method: "POST",
 
         headers: {
@@ -46,7 +47,7 @@ function App() {
         },
 
         body: JSON.stringify({
-          temprature: temperatureNumber,
+          temperature: temperatureValue,
         }),
       });
 
@@ -54,65 +55,174 @@ function App() {
         throw new Error("Prediction request failed");
       }
 
-      const data = await response.json();
+      const result = await response.json();
 
-      setPrediction(data.predict);
+      setSales(result.sales);
+
     } catch (error) {
-      setError("Unable to connect with prediction server.");
+      setError(
+        "Unable to connect to the prediction server."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const handleReset = () => {
+    setTemperature("");
+    setSales(null);
+    setError("");
+  };
+
   return (
     <div className="app">
-      <div className="card">
-        <div className="icon">🍦</div>
 
-        <h1>Ice Cream Sales Predictor</h1>
+      <div className="background-circle circle-one"></div>
+      <div className="background-circle circle-two"></div>
 
-        <p className="subtitle">
-          Predict ice cream sales using temperature
-        </p>
+      <main className="container">
 
-        <div className="input-group">
-          <label htmlFor="temperature">Temperature</label>
+        <section className="card">
 
-          <div className="input-wrapper">
-            <input
-              id="temperature"
-              type="text"
-              value={temperature}
-              onChange={handleTemperatureChange}
-              placeholder="Enter temperature"
-            />
+          {/* Header */}
 
-            <span>°C</span>
+          <div className="header">
+
+            <div className="icon">
+              🍦
+            </div>
+
+            <div>
+              <p className="small-title">
+                MACHINE LEARNING
+              </p>
+
+              <h1>
+                Ice Cream Sales Predictor
+              </h1>
+            </div>
+
           </div>
-        </div>
 
-        {error && (
-          <div className="error-box">
-            ⚠️ {error}
-          </div>
-        )}
 
-        <button onClick={predictSales} disabled={loading}>
-          {loading ? "Predicting..." : "Predict Sales"}
-        </button>
+          {/* Description */}
 
-        {prediction !== null && (
-          <div className="result-box">
-            <p>Predicted Ice Cream Sales</p>
+          <p className="description">
+            Enter the temperature and our machine learning
+            model will predict the expected ice cream sales.
+          </p>
 
-            <h2>{prediction.toFixed(2)}</h2>
 
-            <span>units</span>
-          </div>
-        )}
-      </div>
+          {/* Form */}
+
+          <form onSubmit={handlePredict}>
+
+            <label htmlFor="temperature">
+              Temperature
+            </label>
+
+            <div className="input-wrapper">
+
+              <input
+                id="temperature"
+                type="number"
+                step="any"
+                placeholder="Example: 33"
+                value={temperature}
+                onChange={(e) =>
+                  setTemperature(e.target.value)
+                }
+              />
+
+              <span>°C</span>
+
+            </div>
+
+
+            {/* Error */}
+
+            {error && (
+              <p className="error">
+                {error}
+              </p>
+            )}
+
+
+            {/* Predict Button */}
+
+            <button
+              type="submit"
+              disabled={loading}
+            >
+              {loading
+                ? "Predicting..."
+                : "Predict Sales"}
+            </button>
+
+          </form>
+
+
+          {/* Result */}
+
+          {sales !== null && (
+
+            <div className="result">
+
+              <p className="result-label">
+                PREDICTED ICE CREAM SALES
+              </p>
+
+              <div className="result-number">
+                {sales}
+              </div>
+
+              <p className="result-text">
+                Estimated units sold
+              </p>
+
+              <div className="result-temperature">
+                Temperature:
+                <strong>
+                  {" "}
+                  {temperature}°C
+                </strong>
+              </div>
+
+            </div>
+
+          )}
+
+
+          {/* Reset */}
+
+          {(sales !== null ||
+            temperature !== "") &&
+            !loading && (
+
+              <button
+                className="reset-button"
+                type="button"
+                onClick={handleReset}
+              >
+                Reset Prediction
+              </button>
+
+          )}
+
+
+          {/* Footer */}
+
+          <footer>
+            Powered by React + FastAPI + Machine Learning
+          </footer>
+
+        </section>
+
+      </main>
+
     </div>
   );
 }
 
 export default App;
+
